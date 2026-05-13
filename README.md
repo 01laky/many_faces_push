@@ -48,7 +48,9 @@ Use **HTTPS** or **SSH** remote interchangeably; match the URL style your org us
 
 Download **`GoogleService-Info.plist`** from the Firebase Console (iOS app) and place it at the **repository root** next to `go.mod`. The file is **gitignored** — never commit it (it includes an API key and app identifiers).
 
-Use it as the source of truth while wiring env vars (see **`.env.example`**): `PROJECT_ID`, `BUNDLE_ID`, `GCM_SENDER_ID`, `GOOGLE_APP_ID`, `STORAGE_BUCKET`. The **Go push worker** will use **Firebase Admin + a service account JSON** for FCM (`GOOGLE_APPLICATION_CREDENTIALS`); the plist’s **`API_KEY`** is for the **iOS client**, not for server-side Admin.
+For Android, the Firebase **`google-services.json`** (or a copy named `google-service.json`) belongs in the **Android / React Native** app module, not in the Go worker; if you keep a copy next to `go.mod` for local reference, it is **gitignored** as well — do not commit it.
+
+Use the plist (or JSON) as the source of truth while wiring env vars (see **`.env.example`**): `PROJECT_ID`, `BUNDLE_ID`, `GCM_SENDER_ID`, `GOOGLE_APP_ID`, `STORAGE_BUCKET`. The **Go push worker** will use **Firebase Admin + a service account JSON** for FCM (`GOOGLE_APPLICATION_CREDENTIALS`); the plist’s **`API_KEY`** is for the **iOS client**, not for server-side Admin.
 
 ## License / product
 
