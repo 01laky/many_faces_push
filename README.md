@@ -31,7 +31,8 @@ Many Faces uses **direct FCM registration tokens** on the mobile client (Expo/EA
 | Path | Purpose |
 | ---- | ------- |
 | `README.md` | This file. |
-| `docker-compose.yml` | Local **`push-worker`** service. |
+| `docker-compose.yml` | Local **`push-worker`** service (base compose). |
+| `docker-compose.credentials.yml` | Optional merge file — bind-mounts **`FIREBASE_SA_HOST_PATH`** → `/run/secrets/firebase-sa.json`; used by `scripts/start-push-worker.sh` when a file path is resolved. |
 | `Dockerfile` | Multi-stage **Go 1.25** build → distroless `nonroot`. |
 | `proto/manyfaces/push/v1/push.proto` | Canonical **`.proto`**; C# client generated from the same file in `many_faces_backend`. |
 | `gen/` | Generated **Go** stubs (`protoc` — see below). |
