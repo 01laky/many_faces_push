@@ -9,4 +9,5 @@ coverage.out
 # Service account and Firebase key material (never commit)
 *-sa.json
 google-services.json
+# iOS client plist from Firebase Console (contains API key + app ids — local only)
 GoogleService-Info.plist

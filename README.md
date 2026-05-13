@@ -44,6 +44,12 @@ cd many_faces_push
 
 Use **HTTPS** or **SSH** remote interchangeably; match the URL style your org uses in `.gitmodules`.
 
+## Firebase / iOS client plist (local only)
+
+Download **`GoogleService-Info.plist`** from the Firebase Console (iOS app) and place it at the **repository root** next to `go.mod`. The file is **gitignored** — never commit it (it includes an API key and app identifiers).
+
+Use it as the source of truth while wiring env vars (see **`.env.example`**): `PROJECT_ID`, `BUNDLE_ID`, `GCM_SENDER_ID`, `GOOGLE_APP_ID`, `STORAGE_BUCKET`. The **Go push worker** will use **Firebase Admin + a service account JSON** for FCM (`GOOGLE_APPLICATION_CREDENTIALS`); the plist’s **`API_KEY`** is for the **iOS client**, not for server-side Admin.
+
 ## License / product
 
 Repository policy for a license file will follow the same approach as sibling **`many_faces_*`** infra repos once code is added.
