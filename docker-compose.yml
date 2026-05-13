@@ -1,0 +1,15 @@
+# Local development skeleton for many_faces_push.
+# Full networking attachment to many_faces_main_dev-network is documented in the monorepo when the stack is wired.
+services:
+  push-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: many-faces-push-worker:dev
+    container_name: push-worker-dev
+    environment:
+      # Reserved internal listen address; gRPC server not implemented yet.
+      - PUSH_WORKER_GRPC_LISTEN=:50053
+    ports:
+      - "${PUSH_WORKER_GRPC_HOST_PORT:-59203}:50053"
+    restart: "no"

@@ -1,0 +1,12 @@
+/.env
+/bin/
+/dist/
+*.exe
+.idea/
+.vscode/
+*.log
+coverage.out
+# Service account and Firebase key material (never commit)
+*-sa.json
+google-services.json
+GoogleService-Info.plist

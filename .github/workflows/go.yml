@@ -1,0 +1,22 @@
+# Go CI for many_faces_push (skeleton — extend when gRPC and tests land).
+name: go
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: go vet and test
+        run: |
+          go vet ./...
+          go test ./... -count=1
