@@ -8,6 +8,8 @@
 coverage.out
 # Service account and Firebase key material (never commit)
 *-sa.json
+# Explicit name used by docker-compose.credentials.yml + start-all-dev.sh
+firebase-sa.json
 google-services.json
 google-service.json
 # iOS client plist from Firebase Console (contains API key + app ids — local only)
