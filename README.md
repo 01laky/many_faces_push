@@ -3,37 +3,92 @@
 **Canonical GitHub repository:** [github.com/01laky/many_faces_push](https://github.com/01laky/many_faces_push) — default branch **`main`**.  
 In the **many_faces_main** monorepo this tree is linked as the **`many_faces_push/`** git submodule (see [monorepo submodule guide](https://github.com/01laky/many_faces_main/blob/main/docs/guides/git-submodules.md)).
 
-## Status (skeleton)
+## Status (v1 slice)
 
-This repository is a **placeholder shell** only: **no gRPC server, no Firebase Admin, and no FCM sending** yet. The next implementation steps follow the agent prompt in the monorepo:
+Shipping today:
 
-**[`docs/prompts/push-notifications-fcm-go-grpc-firebase-worker-agent-prompt.md`](https://github.com/01laky/many_faces_main/blob/main/docs/prompts/push-notifications-fcm-go-grpc-firebase-worker-agent-prompt.md)**
+- **gRPC `PushService`** with **`SendPush`** (FCM multicast via Firebase Admin **HTTP v1** under the hood).
+- **`grpc.health.v1`** for probes.
+- Optional **shared-secret** metadata auth (`x-push-worker-token` ↔ `PUSH_WORKER_EXPECTED_TOKEN`).
+- Optional **gRPC reflection** for `grpcurl` (`PUSH_WORKER_GRPC_REFLECTION`, default **on** in `docker-compose.yml` — turn **off** in production images).
+- **Dockerfile** → `gcr.io/distroless/static-debian12:nonroot`.
+
+**Monorepo local-dev guide:** [`docs/guides/push-notifications-local-dev.md`](https://github.com/01laky/many_faces_main/blob/main/docs/guides/push-notifications-local-dev.md)  
+**Full product / security spec:** [`docs/prompts/push-notifications-fcm-go-grpc-firebase-worker-agent-prompt.md`](https://github.com/01laky/many_faces_main/blob/main/docs/prompts/push-notifications-fcm-go-grpc-firebase-worker-agent-prompt.md)
+
+## Token path (locked for v1)
+
+Many Faces uses **direct FCM registration tokens** on the mobile client (Expo/EAS per current docs) — **path A** in the agent prompt §1.1. **`many_faces_backend`** persists tokens; this worker **never** reads PostgreSQL.
 
 ## Intended role (summary)
 
-- **Go gRPC worker** colocated with optional Docker tooling: isolate **Firebase service account credentials** and **FCM dispatch** from **`many_faces_backend`**.
-- **`many_faces_backend`** remains the system of record for users, devices, and authorization; it will call this worker **only via gRPC** once implemented.
+- **Go gRPC worker** isolates **Firebase service account credentials** and **FCM dispatch** from **`many_faces_backend`**.
+- **`many_faces_backend`** remains the system of record for users, devices, and authorization; it calls this worker **only via gRPC**.
 - **Browsers and mobile apps** must **never** call this worker directly.
 
-## Planned layout (target)
+## Repository layout
 
 | Path | Purpose |
 | ---- | ------- |
 | `README.md` | This file. |
-| `docker-compose.yml` | Local **`push-worker`** service (to be wired like other infra submodules). |
-| `Dockerfile` | Multi-stage Go build → minimal runtime image. |
-| `proto/` | Canonical **`.proto`** for `PushService` (v1) — empty until the first proto PR. |
-| `cmd/push-worker/` | Process entrypoint: config, gRPC server, graceful shutdown. |
-| `internal/` | Service implementation, FCM adapter, retries — **no** face/domain ACL here. |
+| `docker-compose.yml` | Local **`push-worker`** service. |
+| `Dockerfile` | Multi-stage **Go 1.25** build → distroless `nonroot`. |
+| `proto/manyfaces/push/v1/push.proto` | Canonical **`.proto`**; C# client generated from the same file in `many_faces_backend`. |
+| `gen/` | Generated **Go** stubs (`protoc` — see below). |
+| `cmd/push-worker/` | Entrypoint: config, Firebase init, gRPC server, graceful shutdown. |
+| `internal/config` | Environment parsing. |
+| `internal/server` | gRPC service + auth interceptor. |
+| `internal/msgutil` | Pure FCM payload mapping + tests. |
+| `.env.example` | Documented env vars (no secrets). |
 
 ## Ports (reserved — do not collide)
 
-Align internal gRPC with monorepo conventions (see prompt **§2.2**):
+| Component | Internal gRPC | Typical host map |
+| --------- | ------------- | ---------------- |
+| `many_faces_ai` | `50051` | (see AI repo) |
+| `many_faces_elastic` search-worker | `50052` | `59202` |
+| **`many_faces_push` push-worker** | **`50053`** | **`59203`** |
 
-- **`many_faces_ai`** — commonly `50051` in examples.
-- **`many_faces_elastic`** search-worker — commonly `50052`.
+Backend example: `Push__WorkerGrpcUrl=http://push-worker-dev:50053` on `many_faces_main_dev-network`.
 
-**Default internal gRPC port for this worker:** **`50053`** (host debug mapping to be documented when compose is finalized).
+## Regenerating Go stubs from `proto/`
+
+When you change `proto/manyfaces/push/v1/push.proto`, regenerate Go into `gen/` (Docker example when `protoc` is not on the host):
+
+```bash
+docker run --rm -v "$(pwd)":/w -w /w golang:1.25-bookworm bash -c '
+  apt-get update -qq && apt-get install -y -qq protobuf-compiler >/dev/null
+  go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.5
+  go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1
+  export PATH="$PATH:$(go env GOPATH)/bin"
+  mkdir -p gen
+  protoc -I proto \
+    --go_out=gen --go_opt=paths=source_relative \
+    --go-grpc_out=gen --go-grpc_opt=paths=source_relative \
+    proto/manyfaces/push/v1/push.proto
+'
+```
+
+## gRPC ↔ FCM error mapping (operator)
+
+| Worker / FCM signal | `PerTokenResult.outcome_code` | `permanent_invalid` | Backend action (recommended) |
+| ------------------- | ------------------------------ | ------------------- | ------------------------------ |
+| Success | `OK` | false | None |
+| Unregistered token | `UNREGISTERED` | **true** | Delete SQL row for that registration token |
+| Sender ID mismatch | `SENDER_ID_MISMATCH` | true | Delete / re-register device |
+| Invalid argument | `INVALID_ARGUMENT` | varies | Fix client payload; often delete bad token |
+| Quota / unavailable | `QUOTA_EXCEEDED` / `UNAVAILABLE` | false | Retry with backoff at backend |
+| Unknown | `UNKNOWN` | false | Log + investigate |
+
+Full tokens are **never** logged; responses include **`token_sha256_prefix`** (first 8 hex chars of SHA-256) for correlation only.
+
+## Firebase / iOS client plist (local only)
+
+Download **`GoogleService-Info.plist`** from the Firebase Console (iOS app) and place it at the **repository root** next to `go.mod`. The file is **gitignored** — never commit it (it includes an API key and app identifiers).
+
+For Android, the Firebase **`google-services.json`** (or a copy named `google-service.json`) belongs in the **Android / React Native** app module, not in the Go worker; if you keep a copy next to `go.mod` for local reference, it is **gitignored** as well — do not commit it.
+
+Use the plist (or JSON) as the source of truth while wiring env vars (see **`.env.example`**). **Server-side FCM** uses **`GOOGLE_APPLICATION_CREDENTIALS`** (service account JSON path inside the container). The plist **`API_KEY`** is for the **iOS client**, not Admin.
 
 ## Clone (standalone)
 
@@ -44,18 +99,10 @@ cd many_faces_push
 
 Use **HTTPS** or **SSH** remote interchangeably; match the URL style your org uses in `.gitmodules`.
 
-## Firebase / iOS client plist (local only)
-
-Download **`GoogleService-Info.plist`** from the Firebase Console (iOS app) and place it at the **repository root** next to `go.mod`. The file is **gitignored** — never commit it (it includes an API key and app identifiers).
-
-For Android, the Firebase **`google-services.json`** (or a copy named `google-service.json`) belongs in the **Android / React Native** app module, not in the Go worker; if you keep a copy next to `go.mod` for local reference, it is **gitignored** as well — do not commit it.
-
-Use the plist (or JSON) as the source of truth while wiring env vars (see **`.env.example`**): `PROJECT_ID`, `BUNDLE_ID`, `GCM_SENDER_ID`, `GOOGLE_APP_ID`, `STORAGE_BUCKET`. The **Go push worker** will use **Firebase Admin + a service account JSON** for FCM (`GOOGLE_APPLICATION_CREDENTIALS`); the plist’s **`API_KEY`** is for the **iOS client**, not for server-side Admin.
-
 ## License / product
 
-Repository policy for a license file will follow the same approach as sibling **`many_faces_*`** infra repos once code is added.
+Repository policy for a license file will follow the same approach as sibling **`many_faces_*`** infra repos.
 
-## Out of scope for first code drop
+## Out of scope for v1 (see monorepo prompt)
 
-See the monorepo prompt **non-goals** (no public REST on the worker, no in-app notification center taxonomy in v1, no SMS/email/web push in this track).
+No public REST on the worker, no in-app notification center taxonomy in v1, no SMS/email/web push in this track.

@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+// Push worker API: internal gRPC surface for many_faces_push (FCM dispatch).
+// many_faces_backend is the sole product caller; mobile never talks to this service.
+package manyfaces.push.v1;
+
+option go_package = "github.com/01laky/many_faces_push/gen/manyfaces/push/v1;pushv1";
+option csharp_namespace = "ManyFaces.Push.V1";
+
+// SendPushRequest carries localization keys (not translated copy) per product rules — see monorepo push prompt §3.4.1.
+message SendPushRequest {
+  // FCM registration tokens (or Expo token if product chose Expo Push path — must match worker implementation).
+  repeated string registration_tokens = 1;
+  // Android / iOS notification title localization key (maps to FCM title_loc_key / APNs title-loc-key).
+  string title_loc_key = 2;
+  // Android / iOS notification body localization key.
+  string body_loc_key = 3;
+  // Positional format arguments for title_loc_key (FCM title_loc_args).
+  repeated string title_loc_args = 4;
+  // Positional format arguments for body_loc_key.
+  repeated string body_loc_args = 5;
+  // Opaque routing payload (IDs, deep-link type). Keep small — may appear on lock screen.
+  map<string, string> data = 6;
+  // Android notification channel id (optional).
+  string android_channel_id = 7;
+  // FCM collapse key (optional).
+  string collapse_key = 8;
+  // Time-to-live in seconds (optional; 0 means use FCM default).
+  uint32 ttl_seconds = 9;
+}
+
+// PerTokenResult summarizes delivery outcome for one registration token (never echoes full token).
+message PerTokenResult {
+  // First 8 chars of SHA-256 hex of the token for log correlation only.
+  string token_sha256_prefix = 1;
+  // True when FCM reports the token as permanently invalid and the backend should delete the row.
+  bool permanent_invalid = 2;
+  // Stable machine-readable code (e.g. FCM error code or "OK").
+  string outcome_code = 3;
+  // Human-readable detail for operators (never include full token).
+  string detail = 4;
+}
+
+message SendPushResponse {
+  int32 sent = 1;
+  int32 failed = 2;
+  repeated PerTokenResult results = 3;
+}
+
+// PushService is implemented only by the Go push-worker. Callers authenticate per many_faces_push README.
+service PushService {
+  // SendPush delivers one logical notification to many devices using localization keys in the OS payload.
+  rpc SendPush(SendPushRequest) returns (SendPushResponse);
+}

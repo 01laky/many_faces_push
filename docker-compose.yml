@@ -8,8 +8,13 @@ services:
     image: many-faces-push-worker:dev
     container_name: push-worker-dev
     environment:
-      # Reserved internal listen address; gRPC server not implemented yet.
       - PUSH_WORKER_GRPC_LISTEN=:50053
+      # Optional: same value as many_faces_backend Push:WorkerAuthToken (metadata x-push-worker-token).
+      - PUSH_WORKER_EXPECTED_TOKEN=${PUSH_WORKER_EXPECTED_TOKEN:-}
+      # Mount a gitignored service account JSON on the host and point this inside the container (see docs/guides/push-notifications-local-dev.md).
+      - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS:-}
+      # Dev-only: grpcurl / tooling. Set to 0 in production images.
+      - PUSH_WORKER_GRPC_REFLECTION=${PUSH_WORKER_GRPC_REFLECTION:-1}
     ports:
       - "${PUSH_WORKER_GRPC_HOST_PORT:-59203}:50053"
     restart: "no"
