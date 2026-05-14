@@ -78,11 +78,25 @@ echo "== Starting push-worker (TLS + mTLS)"
 # Give the container a moment to bind before the first probe (cold CI runners).
 sleep 2
 
-echo "== Waiting for grpc.health Check (grpcurl, TLS + mTLS)"
+GRPC_PROTO_ROOT="$PUSH_DIR/scripts/grpcurl-protos"
+
+grpcurl_health_check() {
+  grpcurl \
+    -import-path "$GRPC_PROTO_ROOT" \
+    -proto grpc/health/v1/health.proto \
+    -servername localhost \
+    -cacert "$CERT_DIR/ca.crt" \
+    -cert "$CERT_DIR/client.crt" \
+    -key "$CERT_DIR/client.key" \
+    -d '{"service":""}' \
+    127.0.0.1:59215 \
+    grpc.health.v1.Health/Check
+}
+
+echo "== Waiting for grpc.health Check (grpcurl, TLS + mTLS; no server reflection)"
 GRPC_OK=0
 for _ in $(seq 1 60); do
-  if grpcurl -servername localhost -cacert "$CERT_DIR/ca.crt" -cert "$CERT_DIR/client.crt" -key "$CERT_DIR/client.key" \
-    -d '{}' 127.0.0.1:59215 grpc.health.v1.Health/Check >/dev/null 2>&1; then
+  if grpcurl_health_check >/dev/null 2>&1; then
     echo "   grpcurl Health/Check succeeded"
     GRPC_OK=1
     break
@@ -92,8 +106,7 @@ done
 if [[ "$GRPC_OK" != "1" ]]; then
   echo "grpcurl Health/Check did not succeed in time" >&2
   (cd "$PUSH_DIR" && docker compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" logs --tail 120 push-worker) >&2 || true
-  grpcurl -servername localhost -cacert "$CERT_DIR/ca.crt" -cert "$CERT_DIR/client.crt" -key "$CERT_DIR/client.key" \
-    -d '{}' 127.0.0.1:59215 grpc.health.v1.Health/Check >&2 || true
+  grpcurl_health_check >&2 || true
   exit 1
 fi
 
