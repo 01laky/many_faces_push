@@ -57,13 +57,13 @@ Backend example: `Push__WorkerGrpcUrl=http://push-worker-dev:50053` on `many_fac
 
 ## Regenerating Go stubs (from `many_faces_proto`)
 
-When the contract under **`many_faces_proto/proto/manyfaces/push/v1/push.proto`** changes, regenerate Go into **`gen/`** from this repo root inside **`many_faces_main`** (Docker example when `protoc` is not on the host):
+When the contract under **`many_faces_proto/proto/manyfaces/push/v1/push.proto`** changes, regenerate Go into **`gen/`** from this repository root (Docker example when `protoc` is not on the host):
 
 ```bash
-# Run from many_faces_push/ with many_faces_proto as a sibling submodule (monorepo default).
+# Run from many_faces_push/ with nested many_faces_proto submodule (Strategy B).
 docker run --rm \
   -v "$(pwd)":/w \
-  -v "$(pwd)/../many_faces_proto":/mfproto:ro \
+  -v "$(pwd)/many_faces_proto":/mfproto:ro \
   -w /w golang:1.25-bookworm bash -c '
   apt-get update -qq && apt-get install -y -qq protobuf-compiler >/dev/null
   go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.5
@@ -77,7 +77,7 @@ docker run --rm \
 '
 ```
 
-**Standalone clone** of `many_faces_push`: clone **`many_faces_proto`** beside this repo (or adjust the `-v` mount) so `/mfproto/proto` resolves.
+**Standalone clone** of `many_faces_push`: run **`git submodule update --init --recursive`** so **`many_faces_proto/`** is populated, or adjust the **`-v`** mount to a checkout of **`many_faces_proto`**.
 
 ## gRPC ↔ FCM error mapping (operator)
 
