@@ -10,6 +10,7 @@ Shipping today:
 - **gRPC `PushService`** with **`SendPush`** (FCM multicast via Firebase Admin **HTTP v1** under the hood).
 - **`grpc.health.v1`** for probes.
 - Optional **shared-secret** metadata auth (`x-push-worker-token` ↔ `PUSH_WORKER_EXPECTED_TOKEN`).
+- Optional **TLS** and **mTLS** on the gRPC listener (`PUSH_WORKER_GRPC_TLS_*` — see monorepo [`docs/guides/push-grpc-tls-mtls.md`](https://github.com/01laky/many_faces_main/blob/main/docs/guides/push-grpc-tls-mtls.md)).
 - Optional **gRPC reflection** for `grpcurl` (`PUSH_WORKER_GRPC_REFLECTION`, default **on** in `docker-compose.yml` — turn **off** in production images).
 - **Dockerfile** → `gcr.io/distroless/static-debian12:nonroot`.
 
@@ -32,12 +33,14 @@ Many Faces uses **direct FCM registration tokens** on the mobile client (Expo/EA
 | ---- | ------- |
 | `README.md` | This file. |
 | `docker-compose.yml` | Local **`push-worker`** service (base compose). |
+| `docker-compose.tls-smoke.yml` | CI/local **TLS + mTLS** smoke (host port **59215**); see `scripts/smoke-grpc-tls.sh`. |
 | `docker-compose.credentials.yml` | Optional merge file — bind-mounts **`FIREBASE_SA_HOST_PATH`** → `/run/secrets/firebase-sa.json`; used by `scripts/start-push-worker.sh` when a file path is resolved. |
 | `Dockerfile` | Multi-stage **Go 1.25** build → distroless `nonroot`. |
 | `proto/manyfaces/push/v1/push.proto` | Canonical **`.proto`**; C# client generated from the same file in `many_faces_backend`. |
 | `gen/` | Generated **Go** stubs (`protoc` — see below). |
 | `cmd/push-worker/` | Entrypoint: config, Firebase init, gRPC server, graceful shutdown. |
-| `internal/config` | Environment parsing. |
+| `internal/config` | Environment parsing + validation. |
+| `internal/grpccreds` | gRPC server TLS / mTLS credential loading (mirrors `many_faces_elastic/internal/grpccreds`). |
 | `internal/server` | gRPC service + auth interceptor. |
 | `internal/msgutil` | Pure FCM payload mapping + tests. |
 | `.env.example` | Documented env vars (no secrets). |

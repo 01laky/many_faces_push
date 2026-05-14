@@ -23,6 +23,12 @@ type Config struct {
 
 	// EnableReflection registers gRPC server reflection (grpcurl). Disable in production.
 	EnableReflection bool
+
+	// GrpcTLSCertFile / GrpcTLSKeyFile enable TLS on the gRPC listener (both required together).
+	GrpcTLSCertFile string
+	GrpcTLSKeyFile  string
+	// GrpcMTLSClientCAFile, when set with TLS cert+key, requires client certificates signed by this CA bundle.
+	GrpcMTLSClientCAFile string
 }
 
 const (
@@ -34,6 +40,11 @@ const (
 	EnvGoogleApplicationCredentials = "GOOGLE_APPLICATION_CREDENTIALS"
 	// EnvEnableReflection accepts "1", "true", "yes" (case-insensitive) to enable gRPC reflection.
 	EnvEnableReflection = "PUSH_WORKER_GRPC_REFLECTION"
+	// EnvGrpcTLSCertFile / EnvGrpcTLSKeyFile enable TLS on the gRPC server (see monorepo docs/guides/push-grpc-tls-mtls.md).
+	EnvGrpcTLSCertFile = "PUSH_WORKER_GRPC_TLS_CERT_FILE"
+	EnvGrpcTLSKeyFile  = "PUSH_WORKER_GRPC_TLS_KEY_FILE"
+	// EnvGrpcMTLSClientCAFile requires verified client certs when set (mTLS).
+	EnvGrpcMTLSClientCAFile = "PUSH_WORKER_GRPC_MTLS_CLIENT_CA_FILE"
 )
 
 // LoadFromEnv parses environment variables into Config. Missing optional values use safe defaults.
@@ -50,6 +61,9 @@ func LoadFromEnv() (*Config, error) {
 		ExpectedWorkerToken:            strings.TrimSpace(os.Getenv(EnvExpectedToken)),
 		GoogleApplicationCredentials: strings.TrimSpace(os.Getenv(EnvGoogleApplicationCredentials)),
 		EnableReflection:               reflection,
+		GrpcTLSCertFile:                strings.TrimSpace(os.Getenv(EnvGrpcTLSCertFile)),
+		GrpcTLSKeyFile:                strings.TrimSpace(os.Getenv(EnvGrpcTLSKeyFile)),
+		GrpcMTLSClientCAFile:           strings.TrimSpace(os.Getenv(EnvGrpcMTLSClientCAFile)),
 	}, nil
 }
 
@@ -73,6 +87,9 @@ func parseBool(raw string) bool {
 func (c *Config) Validate() error {
 	if c == nil {
 		return fmt.Errorf("config is nil")
+	}
+	if (c.GrpcTLSCertFile != "") != (c.GrpcTLSKeyFile != "") {
+		return fmt.Errorf("%s and %s must both be set for TLS, or both empty", EnvGrpcTLSCertFile, EnvGrpcTLSKeyFile)
 	}
 	return nil
 }

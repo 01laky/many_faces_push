@@ -21,6 +21,7 @@ import (
 
 	pushv1 "github.com/01laky/many_faces_push/gen/manyfaces/push/v1"
 	"github.com/01laky/many_faces_push/internal/config"
+	"github.com/01laky/many_faces_push/internal/grpccreds"
 	"github.com/01laky/many_faces_push/internal/server"
 )
 
@@ -64,9 +65,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	serverOpts := []grpc.ServerOption{
-		grpc.ChainUnaryInterceptor(server.UnaryAuthInterceptor(cfg.ExpectedWorkerToken)),
+	serverCreds, err := grpccreds.LoadServerCredentials(cfg.GrpcTLSCertFile, cfg.GrpcTLSKeyFile, cfg.GrpcMTLSClientCAFile)
+	if err != nil {
+		log.Error("failed to configure gRPC TLS", "error", err)
+		os.Exit(1)
 	}
+
+	var serverOpts []grpc.ServerOption
+	if serverCreds != nil {
+		serverOpts = append(serverOpts, grpc.Creds(serverCreds))
+	}
+	serverOpts = append(serverOpts, grpc.ChainUnaryInterceptor(server.UnaryAuthInterceptor(cfg.ExpectedWorkerToken)))
 	grpcServer := grpc.NewServer(serverOpts...)
 
 	pushv1.RegisterPushServiceServer(grpcServer, server.NewPushService(msgClient, log))
@@ -81,7 +90,14 @@ func main() {
 	}
 
 	go func() {
-		log.Info("push-worker gRPC listening", "addr", cfg.GRPCListen, "auth_token_configured", cfg.ExpectedWorkerToken != "")
+		tlsMode := "plaintext"
+		if serverCreds != nil {
+			tlsMode = "tls"
+			if cfg.GrpcMTLSClientCAFile != "" {
+				tlsMode = "mtls"
+			}
+		}
+		log.Info("push-worker gRPC listening", "addr", cfg.GRPCListen, "tls", tlsMode, "auth_token_configured", cfg.ExpectedWorkerToken != "")
 		if err := grpcServer.Serve(lis); err != nil {
 			log.Error("gRPC server stopped with error", "error", err)
 			os.Exit(1)

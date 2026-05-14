@@ -1,0 +1,27 @@
+# Isolated push-worker for TLS/mTLS smoke tests (CI and local).
+# Host port 59215 maps to container :50053. PEM bundle is mounted read-only at /tls.
+# Run: PUSH_TLS_SMOKE_CERT_DIR="$(pwd)/certs" docker compose -f docker-compose.tls-smoke.yml --project-name mf-push-tls-smoke up -d --build
+
+services:
+  push-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: many-faces-push-worker:tls-smoke
+    container_name: push-worker-tls-smoke
+    environment:
+      - PUSH_WORKER_GRPC_LISTEN=:50053
+      - PUSH_WORKER_GRPC_REFLECTION=0
+      - PUSH_WORKER_GRPC_TLS_CERT_FILE=/tls/server.crt
+      - PUSH_WORKER_GRPC_TLS_KEY_FILE=/tls/server.key
+      - PUSH_WORKER_GRPC_MTLS_CLIENT_CA_FILE=/tls/ca.crt
+    ports:
+      - "59215:50053"
+    volumes:
+      - ${PUSH_TLS_SMOKE_CERT_DIR:?PUSH_TLS_SMOKE_CERT_DIR must point to a directory containing ca.crt, server.crt, server.key, client.crt, client.key}:/tls:ro
+    networks:
+      - tls-smoke-net
+
+networks:
+  tls-smoke-net:
+    driver: bridge

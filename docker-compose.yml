@@ -15,6 +15,10 @@ services:
       - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS:-}
       # Dev-only: grpcurl / tooling. Set to 0 in production images.
       - PUSH_WORKER_GRPC_REFLECTION=${PUSH_WORKER_GRPC_REFLECTION:-1}
+      # Optional TLS + mTLS (mount PEM files read-only). See docs/guides/push-grpc-tls-mtls.md in many_faces_main.
+      # - PUSH_WORKER_GRPC_TLS_CERT_FILE=/run/grpc-tls/server.crt
+      # - PUSH_WORKER_GRPC_TLS_KEY_FILE=/run/grpc-tls/server.key
+      # - PUSH_WORKER_GRPC_MTLS_CLIENT_CA_FILE=/run/grpc-tls/client-ca.crt
     ports:
       - "${PUSH_WORKER_GRPC_HOST_PORT:-59203}:50053"
     restart: "no"
