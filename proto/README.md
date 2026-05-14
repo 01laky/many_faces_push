@@ -1,5 +1,5 @@
-# `proto/`
+# `proto/` (legacy path)
 
-Canonical **gRPC `.proto`** definitions for **`PushService`** (versioned `v1`) will live here.
+**Canonical `.proto` source:** the **`many_faces_proto`** git submodule at the monorepo root (`../many_faces_proto/proto/manyfaces/push/v1/push.proto`).
 
-**Status:** empty until the first proto + codegen PR. Consumption pattern in **`many_faces_backend`** should mirror **`many_faces_elastic`** / `Grpc.Tools` (see monorepo prompt **§3.2** and **§4.5**).
+This directory no longer stores a copy of the contract. Regenerate **Go** stubs into `gen/` using the monorepo layout (see root **`many_faces_push/README.md`** — *Regenerating Go stubs*).

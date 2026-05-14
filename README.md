@@ -36,8 +36,8 @@ Many Faces uses **direct FCM registration tokens** on the mobile client (Expo/EA
 | `docker-compose.tls-smoke.yml` | CI/local **TLS + mTLS** smoke (host port **59215**); see `scripts/smoke-grpc-tls.sh`. |
 | `docker-compose.credentials.yml` | Optional merge file — bind-mounts **`FIREBASE_SA_HOST_PATH`** → `/run/secrets/firebase-sa.json`; used by `scripts/start-push-worker.sh` when a file path is resolved. |
 | `Dockerfile` | Multi-stage **Go 1.25** build → distroless `nonroot`. |
-| `proto/manyfaces/push/v1/push.proto` | Canonical **`.proto`**; C# client generated from the same file in `many_faces_backend`. |
-| `gen/` | Generated **Go** stubs (`protoc` — see below). |
+| `proto/README.md` | Pointer to canonical `.proto` in **`many_faces_proto`** (monorepo submodule). |
+| `gen/` | Generated **Go** stubs (`protoc` — see below; inputs live under **`many_faces_proto/proto`**). |
 | `cmd/push-worker/` | Entrypoint: config, Firebase init, gRPC server, graceful shutdown. |
 | `internal/config` | Environment parsing + validation. |
 | `internal/grpccreds` | gRPC server TLS / mTLS credential loading (mirrors `many_faces_elastic/internal/grpccreds`). |
@@ -55,23 +55,29 @@ Many Faces uses **direct FCM registration tokens** on the mobile client (Expo/EA
 
 Backend example: `Push__WorkerGrpcUrl=http://push-worker-dev:50053` on `many_faces_main_dev-network`.
 
-## Regenerating Go stubs from `proto/`
+## Regenerating Go stubs (from `many_faces_proto`)
 
-When you change `proto/manyfaces/push/v1/push.proto`, regenerate Go into `gen/` (Docker example when `protoc` is not on the host):
+When the contract under **`many_faces_proto/proto/manyfaces/push/v1/push.proto`** changes, regenerate Go into **`gen/`** from this repo root inside **`many_faces_main`** (Docker example when `protoc` is not on the host):
 
 ```bash
-docker run --rm -v "$(pwd)":/w -w /w golang:1.25-bookworm bash -c '
+# Run from many_faces_push/ with many_faces_proto as a sibling submodule (monorepo default).
+docker run --rm \
+  -v "$(pwd)":/w \
+  -v "$(pwd)/../many_faces_proto":/mfproto:ro \
+  -w /w golang:1.25-bookworm bash -c '
   apt-get update -qq && apt-get install -y -qq protobuf-compiler >/dev/null
   go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.5
   go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1
   export PATH="$PATH:$(go env GOPATH)/bin"
   mkdir -p gen
-  protoc -I proto \
+  protoc -I /mfproto/proto \
     --go_out=gen --go_opt=paths=source_relative \
     --go-grpc_out=gen --go-grpc_opt=paths=source_relative \
-    proto/manyfaces/push/v1/push.proto
+    manyfaces/push/v1/push.proto
 '
 ```
+
+**Standalone clone** of `many_faces_push`: clone **`many_faces_proto`** beside this repo (or adjust the `-v` mount) so `/mfproto/proto` resolves.
 
 ## gRPC ↔ FCM error mapping (operator)
 
