@@ -43,6 +43,33 @@ func TestBuildMulticastMessage_LocalizationAndData(t *testing.T) {
 	}
 }
 
+func TestBuildMulticastMessage_nilRequest(t *testing.T) {
+	_, err := BuildMulticastMessage(nil)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+}
+
+func TestBuildMulticastMessage_noTokens(t *testing.T) {
+	_, err := BuildMulticastMessage(&pushv1.SendPushRequest{TitleLocKey: "t"})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+}
+
+func TestBuildMulticastMessage_zeroTTLOmitsAndroidTTL(t *testing.T) {
+	msg, err := BuildMulticastMessage(&pushv1.SendPushRequest{
+		RegistrationTokens: []string{"tok"},
+		TtlSeconds:         0,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if msg.Android.TTL != nil {
+		t.Fatalf("expected nil TTL, got %+v", msg.Android.TTL)
+	}
+}
+
 func TestBuildMulticastMessage_TokenLimit(t *testing.T) {
 	tokens := make([]string, maxTokensPerMulticast+1)
 	for i := range tokens {

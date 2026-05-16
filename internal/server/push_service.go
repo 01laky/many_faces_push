@@ -14,17 +14,22 @@ import (
 	"github.com/01laky/many_faces_push/internal/msgutil"
 )
 
+// fcmMulticastSender is the subset of Firebase Admin used by SendPush (mocked in unit tests).
+type fcmMulticastSender interface {
+	SendEachForMulticast(ctx context.Context, message *messaging.MulticastMessage) (*messaging.BatchResponse, error)
+}
+
 // PushService implements manyfaces.push.v1.PushService — FCM dispatch only; no domain authorization.
 type PushService struct {
 	pushv1.UnimplementedPushServiceServer
 
 	// fcm may be nil when GOOGLE_APPLICATION_CREDENTIALS is unset; SendPush then fails fast with FailedPrecondition.
-	fcm *messaging.Client
+	fcm fcmMulticastSender
 	log *slog.Logger
 }
 
 // NewPushService constructs a gRPC service. Pass fcm=nil to run in "metadata + transport only" mode for stacks without credentials.
-func NewPushService(fcm *messaging.Client, log *slog.Logger) *PushService {
+func NewPushService(fcm fcmMulticastSender, log *slog.Logger) *PushService {
 	return &PushService{fcm: fcm, log: log}
 }
 

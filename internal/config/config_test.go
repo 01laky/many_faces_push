@@ -14,6 +14,34 @@ func TestConfig_Validate_tlsRequiresBothCertAndKey(t *testing.T) {
 	}
 }
 
+func TestConfig_Validate_nilConfig(t *testing.T) {
+	t.Parallel()
+	if err := (*Config)(nil).Validate(); err == nil {
+		t.Fatal("expected error")
+	}
+}
+
+func TestLoadFromEnv_TrimsTLSPaths(t *testing.T) {
+	t.Setenv(EnvGRPCListen, "")
+	t.Setenv(EnvExpectedToken, "")
+	t.Setenv(EnvGoogleApplicationCredentials, "")
+	t.Setenv(EnvEnableReflection, "")
+	t.Setenv(EnvGrpcTLSCertFile, "  /certs/server.crt  ")
+	t.Setenv(EnvGrpcTLSKeyFile, " /certs/server.key ")
+	t.Setenv(EnvGrpcMTLSClientCAFile, " /certs/ca.pem ")
+
+	c, err := LoadFromEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.GrpcTLSCertFile != "/certs/server.crt" || c.GrpcTLSKeyFile != "/certs/server.key" {
+		t.Fatalf("tls paths: cert=%q key=%q", c.GrpcTLSCertFile, c.GrpcTLSKeyFile)
+	}
+	if c.GrpcMTLSClientCAFile != "/certs/ca.pem" {
+		t.Fatalf("mtls ca: %q", c.GrpcMTLSClientCAFile)
+	}
+}
+
 func TestConfig_Validate_okWhenTlsUnsetOrBothSet(t *testing.T) {
 	t.Parallel()
 	c := &Config{}

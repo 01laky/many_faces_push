@@ -109,6 +109,33 @@ func TestUnaryAuthInterceptor_SendPushRejectsWrongToken(t *testing.T) {
 	}
 }
 
+func TestUnaryAuthInterceptor_RejectsWhenMetadataMissing(t *testing.T) {
+	ic := UnaryAuthInterceptor("push-secret")
+	info := &grpc.UnaryServerInfo{FullMethod: "/manyfaces.push.v1.PushService/SendPush"}
+	_, err := ic(context.Background(), nil, info, func(context.Context, any) (any, error) {
+		t.Fatal("handler should not run")
+		return nil, nil
+	})
+	st, ok := status.FromError(err)
+	if !ok || st.Code() != codes.Unauthenticated {
+		t.Fatalf("unexpected: %v", err)
+	}
+}
+
+func TestUnaryAuthInterceptor_RejectsDuplicateTokenHeaders(t *testing.T) {
+	ic := UnaryAuthInterceptor("push-secret")
+	info := &grpc.UnaryServerInfo{FullMethod: "/manyfaces.push.v1.PushService/SendPush"}
+	md := metadata.Pairs("x-push-worker-token", "push-secret", "x-push-worker-token", "push-secret")
+	ctx := metadata.NewIncomingContext(context.Background(), md)
+	_, err := ic(ctx, nil, info, func(context.Context, any) (any, error) {
+		t.Fatal("handler should not run")
+		return nil, nil
+	})
+	if err == nil {
+		t.Fatal("expected error for duplicate metadata values")
+	}
+}
+
 func TestUnaryAuthInterceptor_SendPushAllowsCorrectToken(t *testing.T) {
 	const secret = "push-secret"
 	srv := grpc.NewServer(grpc.ChainUnaryInterceptor(UnaryAuthInterceptor(secret)))
