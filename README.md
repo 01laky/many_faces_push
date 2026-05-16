@@ -3,6 +3,13 @@
 **Canonical GitHub repository:** [github.com/01laky/many_faces_push](https://github.com/01laky/many_faces_push) — default branch **`main`**.  
 In the **many_faces_main** monorepo this tree is linked as the **`many_faces_push/`** git submodule (see [monorepo submodule guide](https://github.com/01laky/many_faces_main/blob/main/docs/guides/git-submodules.md)).
 
+```bash
+# From many_faces_main root
+git submodule update --init --recursive many_faces_push
+```
+
+**Mobile client:** [`many_faces_mobile`](https://github.com/01laky/many_faces_mobile) registers FCM tokens via **`many_faces_backend`** REST — see [push-notifications-local-dev.md](https://github.com/01laky/many_faces_main/blob/main/docs/guides/push-notifications-local-dev.md).
+
 ## Status (v1 slice)
 
 Shipping today:
@@ -29,29 +36,29 @@ Many Faces uses **direct FCM registration tokens** on the mobile client (Expo/EA
 
 ## Repository layout
 
-| Path | Purpose |
-| ---- | ------- |
-| `README.md` | This file. |
-| `docker-compose.yml` | Local **`push-worker`** service (base compose). |
-| `docker-compose.tls-smoke.yml` | CI/local **TLS + mTLS** smoke (host port **59215**); see `scripts/smoke-grpc-tls.sh`. |
+| Path                             | Purpose                                                                                                                                                               |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `README.md`                      | This file.                                                                                                                                                            |
+| `docker-compose.yml`             | Local **`push-worker`** service (base compose).                                                                                                                       |
+| `docker-compose.tls-smoke.yml`   | CI/local **TLS + mTLS** smoke (host port **59215**); see `scripts/smoke-grpc-tls.sh`.                                                                                 |
 | `docker-compose.credentials.yml` | Optional merge file — bind-mounts **`FIREBASE_SA_HOST_PATH`** → `/run/secrets/firebase-sa.json`; used by `scripts/start-push-worker.sh` when a file path is resolved. |
-| `Dockerfile` | Multi-stage **Go 1.25** build → distroless `nonroot`. |
-| `proto/README.md` | Pointer to canonical `.proto` in **`many_faces_proto`** (monorepo submodule). |
-| `gen/` | Generated **Go** stubs (`protoc` — see below; inputs live under **`many_faces_proto/proto`**). |
-| `cmd/push-worker/` | Entrypoint: config, Firebase init, gRPC server, graceful shutdown. |
-| `internal/config` | Environment parsing + validation. |
-| `internal/grpccreds` | gRPC server TLS / mTLS credential loading (mirrors `many_faces_elastic/internal/grpccreds`). |
-| `internal/server` | gRPC service + auth interceptor. |
-| `internal/msgutil` | Pure FCM payload mapping + tests. |
-| `.env.example` | Documented env vars (no secrets). |
+| `Dockerfile`                     | Multi-stage **Go 1.25** build → distroless `nonroot`.                                                                                                                 |
+| `proto/README.md`                | Pointer to canonical `.proto` in **`many_faces_proto`** (monorepo submodule).                                                                                         |
+| `gen/`                           | Generated **Go** stubs (`protoc` — see below; inputs live under **`many_faces_proto/proto`**).                                                                        |
+| `cmd/push-worker/`               | Entrypoint: config, Firebase init, gRPC server, graceful shutdown.                                                                                                    |
+| `internal/config`                | Environment parsing + validation.                                                                                                                                     |
+| `internal/grpccreds`             | gRPC server TLS / mTLS credential loading (mirrors `many_faces_elastic/internal/grpccreds`).                                                                          |
+| `internal/server`                | gRPC service + auth interceptor.                                                                                                                                      |
+| `internal/msgutil`               | Pure FCM payload mapping + tests.                                                                                                                                     |
+| `.env.example`                   | Documented env vars (no secrets).                                                                                                                                     |
 
 ## Ports (reserved — do not collide)
 
-| Component | Internal gRPC | Typical host map |
-| --------- | ------------- | ---------------- |
-| `many_faces_ai` | `50051` | (see AI repo) |
-| `many_faces_elastic` search-worker | `50052` | `59202` |
-| **`many_faces_push` push-worker** | **`50053`** | **`59203`** |
+| Component                          | Internal gRPC | Typical host map |
+| ---------------------------------- | ------------- | ---------------- |
+| `many_faces_ai`                    | `50051`       | (see AI repo)    |
+| `many_faces_elastic` search-worker | `50052`       | `59202`          |
+| **`many_faces_push` push-worker**  | **`50053`**   | **`59203`**      |
 
 Backend example: `Push__WorkerGrpcUrl=http://push-worker-dev:50053` on `many_faces_main_dev-network`.
 
@@ -81,14 +88,14 @@ docker run --rm \
 
 ## gRPC ↔ FCM error mapping (operator)
 
-| Worker / FCM signal | `PerTokenResult.outcome_code` | `permanent_invalid` | Backend action (recommended) |
-| ------------------- | ------------------------------ | ------------------- | ------------------------------ |
-| Success | `OK` | false | None |
-| Unregistered token | `UNREGISTERED` | **true** | Delete SQL row for that registration token |
-| Sender ID mismatch | `SENDER_ID_MISMATCH` | true | Delete / re-register device |
-| Invalid argument | `INVALID_ARGUMENT` | varies | Fix client payload; often delete bad token |
-| Quota / unavailable | `QUOTA_EXCEEDED` / `UNAVAILABLE` | false | Retry with backoff at backend |
-| Unknown | `UNKNOWN` | false | Log + investigate |
+| Worker / FCM signal | `PerTokenResult.outcome_code`    | `permanent_invalid` | Backend action (recommended)               |
+| ------------------- | -------------------------------- | ------------------- | ------------------------------------------ |
+| Success             | `OK`                             | false               | None                                       |
+| Unregistered token  | `UNREGISTERED`                   | **true**            | Delete SQL row for that registration token |
+| Sender ID mismatch  | `SENDER_ID_MISMATCH`             | true                | Delete / re-register device                |
+| Invalid argument    | `INVALID_ARGUMENT`               | varies              | Fix client payload; often delete bad token |
+| Quota / unavailable | `QUOTA_EXCEEDED` / `UNAVAILABLE` | false               | Retry with backoff at backend              |
+| Unknown             | `UNKNOWN`                        | false               | Log + investigate                          |
 
 Full tokens are **never** logged; responses include **`token_sha256_prefix`** (first 8 hex chars of SHA-256) for correlation only.
 
