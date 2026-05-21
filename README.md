@@ -1,5 +1,7 @@
 # many_faces_push
 
+**FCM push worker for Many Faces AI.** This Go service keeps Firebase Admin credentials out of the backend process and exposes a small gRPC API that `many_faces_backend` can call after mobile devices register tokens through REST.
+
 **Canonical GitHub repository:** [github.com/01laky/many_faces_push](https://github.com/01laky/many_faces_push) — default branch **`main`**.  
 In the **many_faces_main** monorepo this tree is linked as the **`many_faces_push/`** git submodule (see [monorepo submodule guide](https://github.com/01laky/many_faces_main/blob/main/docs/guides/git-submodules.md)).
 
@@ -9,6 +11,14 @@ git submodule update --init --recursive many_faces_push
 ```
 
 **Mobile client:** [`many_faces_mobile`](https://github.com/01laky/many_faces_mobile) registers FCM tokens via **`many_faces_backend`** REST — see [push-notifications-local-dev.md](https://github.com/01laky/many_faces_main/blob/main/docs/guides/push-notifications-local-dev.md).
+
+```mermaid
+flowchart LR
+    mobile["many_faces_mobile<br/>FCM device token"] --> be["many_faces_backend<br/>token registration + policy"]
+    be -->|"SendPush gRPC :50053"| worker["many_faces_push<br/>Go worker"]
+    worker --> firebase["Firebase Admin HTTP v1"]
+    firebase --> device["iOS / Android device"]
+```
 
 ## Status (v1 slice)
 
