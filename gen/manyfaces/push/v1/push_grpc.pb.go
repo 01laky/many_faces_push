@@ -22,7 +22,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PushService_SendPush_FullMethodName = "/manyfaces.push.v1.PushService/SendPush"
+	PushService_SendPush_FullMethodName           = "/manyfaces.push.v1.PushService/SendPush"
+	PushService_TestFcmCredentials_FullMethodName = "/manyfaces.push.v1.PushService/TestFcmCredentials"
 )
 
 // PushServiceClient is the client API for PushService service.
@@ -33,6 +34,8 @@ const (
 type PushServiceClient interface {
 	// SendPush delivers one logical notification to many devices using localization keys in the OS payload.
 	SendPush(ctx context.Context, in *SendPushRequest, opts ...grpc.CallOption) (*SendPushResponse, error)
+	// TestFcmCredentials validates Firebase service account JSON without sending a notification.
+	TestFcmCredentials(ctx context.Context, in *TestFcmCredentialsRequest, opts ...grpc.CallOption) (*TestFcmCredentialsResponse, error)
 }
 
 type pushServiceClient struct {
@@ -53,6 +56,16 @@ func (c *pushServiceClient) SendPush(ctx context.Context, in *SendPushRequest, o
 	return out, nil
 }
 
+func (c *pushServiceClient) TestFcmCredentials(ctx context.Context, in *TestFcmCredentialsRequest, opts ...grpc.CallOption) (*TestFcmCredentialsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TestFcmCredentialsResponse)
+	err := c.cc.Invoke(ctx, PushService_TestFcmCredentials_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PushServiceServer is the server API for PushService service.
 // All implementations must embed UnimplementedPushServiceServer
 // for forward compatibility.
@@ -61,6 +74,8 @@ func (c *pushServiceClient) SendPush(ctx context.Context, in *SendPushRequest, o
 type PushServiceServer interface {
 	// SendPush delivers one logical notification to many devices using localization keys in the OS payload.
 	SendPush(context.Context, *SendPushRequest) (*SendPushResponse, error)
+	// TestFcmCredentials validates Firebase service account JSON without sending a notification.
+	TestFcmCredentials(context.Context, *TestFcmCredentialsRequest) (*TestFcmCredentialsResponse, error)
 	mustEmbedUnimplementedPushServiceServer()
 }
 
@@ -73,6 +88,9 @@ type UnimplementedPushServiceServer struct{}
 
 func (UnimplementedPushServiceServer) SendPush(context.Context, *SendPushRequest) (*SendPushResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendPush not implemented")
+}
+func (UnimplementedPushServiceServer) TestFcmCredentials(context.Context, *TestFcmCredentialsRequest) (*TestFcmCredentialsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TestFcmCredentials not implemented")
 }
 func (UnimplementedPushServiceServer) mustEmbedUnimplementedPushServiceServer() {}
 func (UnimplementedPushServiceServer) testEmbeddedByValue()                     {}
@@ -113,6 +131,24 @@ func _PushService_SendPush_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PushService_TestFcmCredentials_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TestFcmCredentialsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PushServiceServer).TestFcmCredentials(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PushService_TestFcmCredentials_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PushServiceServer).TestFcmCredentials(ctx, req.(*TestFcmCredentialsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PushService_ServiceDesc is the grpc.ServiceDesc for PushService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -123,6 +159,10 @@ var PushService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SendPush",
 			Handler:    _PushService_SendPush_Handler,
+		},
+		{
+			MethodName: "TestFcmCredentials",
+			Handler:    _PushService_TestFcmCredentials_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

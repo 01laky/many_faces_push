@@ -30,7 +30,7 @@ func (s *stubFCM) SendEachForMulticast(_ context.Context, msg *messaging.Multica
 
 func TestPushService_SendPush_nilFCM(t *testing.T) {
 	svc := NewPushService(nil, slog.Default())
-	_, err := svc.SendPush(context.Background(), &pushv1.SendPushRequest{RegistrationTokens: []string{"t"}})
+	_, err := svc.SendPush(context.Background(), &pushv1.SendPushRequest{RegistrationTokens: []string{"t"}, TitleLocKey: "k", BodyLocKey: "b"})
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -40,7 +40,7 @@ func TestPushService_SendPush_nilFCM(t *testing.T) {
 }
 
 func TestPushService_SendPush_nilRequest(t *testing.T) {
-	svc := NewPushService(&stubFCM{}, slog.Default())
+	svc := NewPushServiceWithResolver(&stubResolver{client: &stubFCM{}}, slog.Default())
 	_, err := svc.SendPush(context.Background(), nil)
 	if status.Code(err) != codes.InvalidArgument {
 		t.Fatalf("code: %v", err)
@@ -48,7 +48,7 @@ func TestPushService_SendPush_nilRequest(t *testing.T) {
 }
 
 func TestPushService_SendPush_emptyTokens(t *testing.T) {
-	svc := NewPushService(&stubFCM{}, slog.Default())
+	svc := NewPushServiceWithResolver(&stubResolver{client: &stubFCM{}}, slog.Default())
 	_, err := svc.SendPush(context.Background(), &pushv1.SendPushRequest{})
 	if status.Code(err) != codes.InvalidArgument {
 		t.Fatalf("code: %v", err)
@@ -64,7 +64,7 @@ func TestPushService_SendPush_successAndFailurePerToken(t *testing.T) {
 			},
 		},
 	}
-	svc := NewPushService(stub, slog.Default())
+	svc := NewPushServiceWithResolver(&stubResolver{client: stub}, slog.Default())
 	resp, err := svc.SendPush(context.Background(), &pushv1.SendPushRequest{
 		RegistrationTokens: []string{"tok-a", "tok-b"},
 		TitleLocKey:        "title",
@@ -94,7 +94,7 @@ func TestPushService_SendPush_chunksOver500Tokens(t *testing.T) {
 			Responses: []*messaging.SendResponse{{Success: true}},
 		},
 	}
-	svc := NewPushService(stub, slog.Default())
+	svc := NewPushServiceWithResolver(&stubResolver{client: stub}, slog.Default())
 	_, err := svc.SendPush(context.Background(), &pushv1.SendPushRequest{
 		RegistrationTokens: tokens,
 		TitleLocKey:        "k",
@@ -110,7 +110,7 @@ func TestPushService_SendPush_chunksOver500Tokens(t *testing.T) {
 
 func TestPushService_SendPush_fcmTransportFailure(t *testing.T) {
 	stub := &stubFCM{err: errors.New("network down")}
-	svc := NewPushService(stub, slog.Default())
+	svc := NewPushServiceWithResolver(&stubResolver{client: stub}, slog.Default())
 	_, err := svc.SendPush(context.Background(), &pushv1.SendPushRequest{
 		RegistrationTokens: []string{"tok"},
 		TitleLocKey:        "k",

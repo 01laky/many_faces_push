@@ -8,7 +8,7 @@
 | ------ | ----------- |
 | **Security** | Optional **`x-push-worker-token`** metadata; **TLS** and **mTLS** on gRPC listener; distroless non-root image; reflection off in prod. [`docs/guides/push-grpc-tls-mtls.md`](../docs/guides/push-grpc-tls-mtls.md). |
 | **AI** | *Not applicable* — FCM delivery only. |
-| **Configuration** | **`PUSH_WORKER_*`** env (Firebase JSON, token, TLS paths); backend **`PushOptions`** + admin infra smoke; disable stack slice: **`ENABLE_PUSH_WORKER=0`**. Local guide: [`../docs/guides/push-notifications-local-dev.md`](../docs/guides/push-notifications-local-dev.md). |
+| **Configuration** | **Per-request `FcmCredentialsConfig`** from admin (service account JSON in PostgreSQL) **or** env fallback **`GOOGLE_APPLICATION_CREDENTIALS`**; **`TestFcmCredentials`** RPC. Guide: [`../docs/guides/admin-push-configuration.md`](../docs/guides/admin-push-configuration.md). |
 
 **Canonical GitHub repository:** [github.com/01laky/many_faces_push](https://github.com/01laky/many_faces_push) — default branch **`main`**.  
 In the **many_faces_main** monorepo this tree is linked as the **`many_faces_push/`** git submodule (see [monorepo submodule guide](https://github.com/01laky/many_faces_main/blob/main/docs/guides/git-submodules.md)).
