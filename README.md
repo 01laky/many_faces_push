@@ -1,13 +1,15 @@
 # many_faces_push
 
+**Version:** [`0.4.0`](./VERSION) · [Changelog](./CHANGELOG.md)
+
 **FCM push worker for Many Faces AI.** This Go service keeps Firebase Admin credentials out of the backend process and exposes a small gRPC API that `many_faces_backend` can call after mobile devices register tokens through REST. Firebase credentials stay in this process, not in the API.
 
 ### Three pillars
 
-| Pillar | Highlights |
-| ------ | ----------- |
-| **Security** | Optional **`x-push-worker-token`** metadata; **TLS** and **mTLS** on gRPC listener; distroless non-root image; reflection off in prod. [`docs/guides/push-grpc-tls-mtls.md`](../docs/guides/push-grpc-tls-mtls.md). |
-| **AI** | *Not applicable* — FCM delivery only. |
+| Pillar            | Highlights                                                                                                                                                                                                                                                                        |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Security**      | Optional **`x-push-worker-token`** metadata; **TLS** and **mTLS** on gRPC listener; distroless non-root image; reflection off in prod. [`docs/guides/push-grpc-tls-mtls.md`](../docs/guides/push-grpc-tls-mtls.md).                                                               |
+| **AI**            | _Not applicable_ — FCM delivery only.                                                                                                                                                                                                                                             |
 | **Configuration** | **Per-request `FcmCredentialsConfig`** from admin (service account JSON in PostgreSQL) **or** env fallback **`GOOGLE_APPLICATION_CREDENTIALS`**; **`TestFcmCredentials`** RPC. Guide: [`../docs/guides/admin-push-configuration.md`](../docs/guides/admin-push-configuration.md). |
 
 **Canonical GitHub repository:** [github.com/01laky/many_faces_push](https://github.com/01laky/many_faces_push) — default branch **`main`**.  
