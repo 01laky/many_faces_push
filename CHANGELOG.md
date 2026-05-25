@@ -23,6 +23,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — **version h
 
 ---
 
+## [0.4.2]
+
+### Added
+
+- Add README shield badges (version, CI, stack tech) via sync-readme-badges.py.
+
+### Added
+
+- Add README shield badges (version, CI, stack tech) via sync-readme-badges.py.
+
+### Changed
+
+### Fixed
+
+---
+
 ## [0.4.1]
 
 ### Changed
@@ -67,7 +83,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — **version h
 
 - Push worker skeleton with Docker compose, Dockerfile, and CI.
 
-[Unreleased]: https://github.com/01laky/many_faces_push/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/01laky/many_faces_push/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/01laky/many_faces_push/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/01laky/many_faces_push/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/01laky/many_faces_push/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/01laky/many_faces_push/compare/v0.2.0...v0.3.0
