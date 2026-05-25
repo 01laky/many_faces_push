@@ -2,6 +2,8 @@
 
 **Version:** [`0.4.0`](./VERSION) · [Changelog](./CHANGELOG.md)
 
+**Author:** Ladislav Kostolny · [01laky@gmail.com](mailto:01laky@gmail.com)
+
 **FCM push worker for Many Faces AI.** This Go service keeps Firebase Admin credentials out of the backend process and exposes a small gRPC API that `many_faces_backend` can call after mobile devices register tokens through REST. Firebase credentials stay in this process, not in the API.
 
 ### Three pillars
