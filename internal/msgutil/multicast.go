@@ -31,11 +31,11 @@ func BuildMulticastMessage(req *pushv1.SendPushRequest) (*messaging.MulticastMes
 	android := &messaging.AndroidConfig{
 		CollapseKey: req.CollapseKey,
 		Notification: &messaging.AndroidNotification{
-			TitleLocKey:   req.TitleLocKey,
-			BodyLocKey:    req.BodyLocKey,
-			TitleLocArgs:  append([]string(nil), req.TitleLocArgs...),
-			BodyLocArgs:   append([]string(nil), req.BodyLocArgs...),
-			ChannelID:     req.AndroidChannelId,
+			TitleLocKey:  req.TitleLocKey,
+			BodyLocKey:   req.BodyLocKey,
+			TitleLocArgs: append([]string(nil), req.TitleLocArgs...),
+			BodyLocArgs:  append([]string(nil), req.BodyLocArgs...),
+			ChannelID:    req.AndroidChannelId,
 		},
 	}
 	if req.TtlSeconds > 0 {
@@ -57,8 +57,8 @@ func BuildMulticastMessage(req *pushv1.SendPushRequest) (*messaging.MulticastMes
 	}
 
 	return &messaging.MulticastMessage{
-		Tokens: append([]string(nil), req.RegistrationTokens...),
-		Data:   data,
+		Tokens:  append([]string(nil), req.RegistrationTokens...),
+		Data:    data,
 		Android: android,
 		APNS:    apns,
 	}, nil

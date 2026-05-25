@@ -91,4 +91,3 @@ func TestLoadFromEnv_DefaultListenAndReflectionVariants(t *testing.T) {
 		})
 	}
 }
-

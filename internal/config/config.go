@@ -57,13 +57,13 @@ func LoadFromEnv() (*Config, error) {
 	reflection := parseBool(os.Getenv(EnvEnableReflection))
 
 	return &Config{
-		GRPCListen:                     listen,
-		ExpectedWorkerToken:            strings.TrimSpace(os.Getenv(EnvExpectedToken)),
+		GRPCListen:                   listen,
+		ExpectedWorkerToken:          strings.TrimSpace(os.Getenv(EnvExpectedToken)),
 		GoogleApplicationCredentials: strings.TrimSpace(os.Getenv(EnvGoogleApplicationCredentials)),
-		EnableReflection:               reflection,
-		GrpcTLSCertFile:                strings.TrimSpace(os.Getenv(EnvGrpcTLSCertFile)),
-		GrpcTLSKeyFile:                strings.TrimSpace(os.Getenv(EnvGrpcTLSKeyFile)),
-		GrpcMTLSClientCAFile:           strings.TrimSpace(os.Getenv(EnvGrpcMTLSClientCAFile)),
+		EnableReflection:             reflection,
+		GrpcTLSCertFile:              strings.TrimSpace(os.Getenv(EnvGrpcTLSCertFile)),
+		GrpcTLSKeyFile:               strings.TrimSpace(os.Getenv(EnvGrpcTLSKeyFile)),
+		GrpcMTLSClientCAFile:         strings.TrimSpace(os.Getenv(EnvGrpcMTLSClientCAFile)),
 	}, nil
 }
 
