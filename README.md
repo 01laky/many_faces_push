@@ -1,8 +1,6 @@
 # many_faces_push
 
-**FCM push worker for Many Faces AI.** This Go service keeps Firebase Admin credentials out of the backend process and exposes a small gRPC API that `many_faces_backend` can call after mobile devices register tokens through REST.
-
-> **First visit?** Mobile registers FCM tokens via **backend REST**; this worker only sends pushes when the backend calls **`SendPush`**. Firebase credentials stay in this process, not in the API.
+**FCM push worker for Many Faces AI.** This Go service keeps Firebase Admin credentials out of the backend process and exposes a small gRPC API that `many_faces_backend` can call after mobile devices register tokens through REST. Firebase credentials stay in this process, not in the API.
 
 ### Three pillars
 
