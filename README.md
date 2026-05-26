@@ -1,6 +1,7 @@
 # many_faces_push
 
 <!-- readme-badges:start -->
+
 [![version](https://img.shields.io/badge/version-0.4.2-blue)](./VERSION)
 ![Go](https://img.shields.io/badge/Go-1.25-00ADD8)
 ![FCM](https://img.shields.io/badge/FCM-Firebase-FFCA28)
@@ -8,9 +9,10 @@
 [![CI](https://github.com/01laky/many_faces_main/actions/workflows/ci.yml/badge.svg)](https://github.com/01laky/many_faces_main/actions/workflows/ci.yml)
 ![tests](https://img.shields.io/badge/tests-CI%20gated-brightgreen)
 ![platform](https://img.shields.io/badge/platform-Docker-2496ED)
+
 <!-- readme-badges:end -->
 
-**Version:** [`0.4.0`](./VERSION) · [Changelog](./CHANGELOG.md)
+**Version:** [`0.4.2`](./VERSION) · [Changelog](./CHANGELOG.md)
 
 **Author:** Ladislav Kostolny · [01laky@gmail.com](mailto:01laky@gmail.com)
 
