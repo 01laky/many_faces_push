@@ -8,6 +8,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — **version h
 
 | Version       | Theme                                  |
 | ------------- | -------------------------------------- |
+| [0.4.2](#042) | Patch release index sync               |
+| [0.4.1](#041) | Patch                                  |
 | [0.4.0](#040) | Per-request FCM and TestFcmCredentials |
 | [0.3.0](#030) | TLS/mTLS and many_faces_proto          |
 | [0.2.0](#020) | gRPC PushService and FCM SendPush      |
